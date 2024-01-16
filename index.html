@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CheapGPT | Jeet Chugh</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        body {
+            background-color: #343540;
+        }
+
+        .form-control {
+            background-color: #343540;
+            color: #7f7f86;
+            border-color: #7f7f86;
+        }
+
+        .textarea-scrollbar {
+            scrollbar-color: #7f7f86;
+        }
+
+        .textarea-scrollbar::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        .textarea-scrollbar::-webkit-scrollbar-track {
+            background: #343540;
+        }
+
+        .textarea-scrollbar::-webkit-scrollbar-thumb {
+            background-color: #7f7f86;
+            border-radius: 20px;
+            border: 3px solid #343540;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/17.0.2/umd/react.development.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/17.0.2/umd/react-dom.development.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/6.26.0/babel.min.js"></script>
+
+    <script type="text/babel">
+        class CheapGPT extends React.Component {
+            constructor(props) {
+                super(props);
+                this.textAreaRef = React.createRef();
+                this.state = {
+                    searchText: 'Enter a prompt here: ',
+                    scrollText: ''
+                };
+            }
+
+            componentDidUpdate() {
+                const textArea = this.textAreaRef.current;
+                textArea.scrollTop = textArea.scrollHeight;
+            }
+
+            handleInputChange = (event) => {
+                this.setState({ searchText: event.target.value });
+            }
+
+            handleInputFocus = () => {
+                if (this.state.searchText === 'Enter a prompt here: ') {
+                    this.setState({ searchText: '' });
+                }
+            }
+
+            handleInputBlur = () => {
+                if (this.state.searchText === '') {
+                    this.setState({ searchText: 'Enter a prompt here: ' });
+                }
+            }
+
+            handleSubmit = (event) => {
+                event.preventDefault();
+                this.setState({ searchText: '' });
+                fetch('/prompt', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ searchText: this.state.searchText })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log(data);
+                    this.setState(prevState => ({
+                        scrollText: prevState.scrollText + '\n\n' + data.text
+                    }));
+                })
+                .catch(error => {
+                    console.error(error);
+                });
+            }
+
+            render() {
+                return (
+                    <div className="container">
+                        <form onSubmit={this.handleSubmit}>
+                            <div className="row justify-content-center">
+                                <div className="col-md-9">
+                                    <div className="input-group mb-3" style={{marginTop: '1em'}}>
+                                        <textarea
+                                            className="form-control textarea-scrollbar"
+                                            rows="auto"
+                                            value={this.state.scrollText}
+                                            readOnly
+                                            ref={this.textAreaRef}
+                                            style={{ backgroundColor: '#343540', 
+                                                     color: '#7f7f86', 
+                                                     border: "0px", 
+                                                     resize: "none", 
+                                                     height: '90vh', 
+                                                     '&::-webkit-scrollbar-track': {
+                                                        background: '#343540'
+                                                     },
+                                                    '&::-webkit-scrollbar-thumb': {
+                                                        background: '#7f7f86'
+                                                    }}}
+                                        ></textarea>
+                                    </div>
+                                    <div className="input-group mb-3">
+                                        <input
+                                            type="text"
+                                            className="form-control"
+                                            placeholder="Search"
+                                            value={this.state.searchText}
+                                            onChange={this.handleInputChange}
+                                            onFocus={this.handleInputFocus}
+                                            onBlur={this.handleInputBlur}
+                                            onKeyDown={(event) => {
+                                                if (event.key === 'Enter') {
+                                                    event.preventDefault();
+                                                    this.handleSubmit(event);
+                                                }
+                                            }}
+                                            style={{ width: '75%', backgroundColor: '#343540', color: '#7f7f86'}}
+                                        />
+                                        <div className="input-group-append">
+                                            <button className="btn" type="submit" style={{ backgroundColor: '#7f7f86', color: '#343540' }}>Submit</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                );
+            }
+        }
+
+        ReactDOM.render(<CheapGPT />, document.getElementById('root'));
+    </script>
+</body>
+</html>
